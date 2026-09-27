@@ -1,0 +1,7 @@
+name = "caltrac-proxy"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+UPSTREAM_BASE = "https://api.helmholtz-blablador.fz-juelich.de/v1"
+ALLOWED_ORIGINS = "https://cozysocksalways.github.io, http://localhost:5173"

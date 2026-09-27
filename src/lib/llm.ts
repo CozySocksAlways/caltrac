@@ -18,21 +18,35 @@ export async function estimateCalories(
   settings: Pick<Settings, 'llmBaseUrl' | 'llmApiKey' | 'llmModel'>,
 ): Promise<CalorieEstimate> {
   const baseUrl = settings.llmBaseUrl.replace(/\/+$/, '')
-  const res = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${settings.llmApiKey}`,
-    },
-    body: JSON.stringify({
-      model: settings.llmModel,
-      temperature: 0.2,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: description },
-      ],
-    }),
-  })
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${settings.llmApiKey}`,
+  }
+  // Anthropic rejects cross-origin browser requests unless this header is present.
+  if (new URL(baseUrl).hostname.endsWith('anthropic.com')) {
+    headers['anthropic-dangerous-direct-browser-access'] = 'true'
+  }
+
+  let res: Response
+  try {
+    res = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: settings.llmModel,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: description },
+        ],
+      }),
+    })
+  } catch (err) {
+    throw new Error(
+      `Could not reach the LLM endpoint at ${baseUrl}. This is usually the endpoint not allowing ` +
+        `browser (CORS) requests, a wrong base URL, or no network. (${err instanceof Error ? err.message : err})`,
+    )
+  }
 
   if (!res.ok) {
     const body = await res.text().catch(() => '')

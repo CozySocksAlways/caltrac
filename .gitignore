@@ -25,3 +25,6 @@ dist-ssr
 
 # Docs
 PLAN.md
+
+# Cloudflare Wrangler
+.wrangler
